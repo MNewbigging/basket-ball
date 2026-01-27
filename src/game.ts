@@ -6,6 +6,10 @@ import { Paddle } from "./paddle";
 export interface GameKeys {
   arrowLeft: boolean;
   arrowRight: boolean;
+  w: boolean;
+  a: boolean;
+  s: boolean;
+  d: boolean;
 }
 
 export class Game {
@@ -22,6 +26,10 @@ export class Game {
   private keys: GameKeys = {
     arrowLeft: false,
     arrowRight: false,
+    w: false,
+    a: false,
+    s: false,
+    d: false,
   };
 
   private paddle: Paddle;
@@ -85,6 +93,18 @@ export class Game {
       case "ArrowRight":
         this.keys.arrowRight = true;
         break;
+      case "w":
+        this.keys.w = true;
+        break;
+      case "a":
+        this.keys.a = true;
+        break;
+      case "s":
+        this.keys.s = true;
+        break;
+      case "d":
+        this.keys.d = true;
+        break;
     }
   };
 
@@ -95,6 +115,18 @@ export class Game {
         break;
       case "ArrowRight":
         this.keys.arrowRight = false;
+        break;
+      case "w":
+        this.keys.w = false;
+        break;
+      case "a":
+        this.keys.a = false;
+        break;
+      case "s":
+        this.keys.s = false;
+        break;
+      case "d":
+        this.keys.d = false;
         break;
     }
   };
