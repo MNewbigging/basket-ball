@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as CANNON from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
 import { Paddle } from "./paddle";
+import { Ball } from "./ball";
 
 export interface GameKeys {
   arrowLeft: boolean;
@@ -34,6 +35,8 @@ export class Game {
 
   private paddle: Paddle;
 
+  private ball: Ball;
+
   constructor() {
     // Setup
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -50,13 +53,31 @@ export class Game {
       gravity: new CANNON.Vec3(0, -9.82, 0),
     });
 
+    const paddleMaterial = new CANNON.Material("paddle");
+    // todo make multiple mats for different bounciness
+    const ballMaterial = new CANNON.Material("ball");
+
+    const paddleBallContact = new CANNON.ContactMaterial(
+      paddleMaterial,
+      ballMaterial,
+      {
+        restitution: 0.8, // the bouncy factor
+        friction: 0,
+      },
+    );
+    this.physicsWorld.addContactMaterial(paddleBallContact);
+
     this.physicsDebugger = CannonDebugger(this.scene, this.physicsWorld, {
       color: 0xff0000,
     });
 
     // Paddle
-    this.paddle = new Paddle(this.keys);
+    this.paddle = new Paddle(this.keys, paddleMaterial);
     this.physicsWorld.addBody(this.paddle.body);
+
+    // Ball
+    this.ball = new Ball(ballMaterial);
+    this.physicsWorld.addBody(this.ball.body);
   }
 
   start() {

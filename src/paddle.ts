@@ -15,12 +15,16 @@ export class Paddle {
   private readonly moveSpeed = 5;
   private readonly moveStiffness = 10;
 
-  constructor(private keys: GameKeys) {
+  constructor(
+    private keys: GameKeys,
+    material: CANNON.Material,
+  ) {
     // Create physics body
     this.body = new CANNON.Body({
       type: CANNON.Body.KINEMATIC,
       position: new CANNON.Vec3(),
       shape: new CANNON.Box(new CANNON.Vec3(1.5, 0.2, 0.5)),
+      material,
     });
   }
 
