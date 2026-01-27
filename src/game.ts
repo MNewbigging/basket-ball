@@ -1,15 +1,54 @@
 import * as THREE from "three";
+import * as CANNON from "cannon-es";
+import CannonDebugger from "cannon-es-debugger";
+import { Paddle } from "./paddle";
+
+export interface GameKeys {
+  arrowLeft: boolean;
+  arrowRight: boolean;
+}
 
 export class Game {
   private renderer: THREE.WebGLRenderer;
   private camera = new THREE.PerspectiveCamera();
   private scene = new THREE.Scene();
+  private clock = new THREE.Clock();
+
+  private physicsWorld: CANNON.World;
+  private physicsDebugger: {
+    update: () => void;
+  };
+
+  private keys: GameKeys = {
+    arrowLeft: false,
+    arrowRight: false,
+  };
+
+  private paddle: Paddle;
 
   constructor() {
+    // Setup
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.scene.background = new THREE.Color("#1680AF");
+    this.camera.position.set(0, 1.5, 10);
 
+    // Listeners
     window.addEventListener("resize", this.onCanvasResize);
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
+
+    // Physics
+    this.physicsWorld = new CANNON.World({
+      gravity: new CANNON.Vec3(0, -9.82, 0),
+    });
+
+    this.physicsDebugger = CannonDebugger(this.scene, this.physicsWorld, {
+      color: 0xff0000,
+    });
+
+    // Paddle
+    this.paddle = new Paddle(this.keys);
+    this.physicsWorld.addBody(this.paddle.body);
   }
 
   start() {
@@ -21,6 +60,14 @@ export class Game {
   update = () => {
     requestAnimationFrame(this.update);
 
+    const dt = this.clock.getDelta();
+
+    this.paddle.update(dt);
+
+    this.physicsWorld.step(1 / 60, dt, 3);
+
+    this.physicsDebugger.update();
+
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -28,5 +75,27 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+  };
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowLeft":
+        this.keys.arrowLeft = true;
+        break;
+      case "ArrowRight":
+        this.keys.arrowRight = true;
+        break;
+    }
+  };
+
+  private onKeyUp = (e: KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowLeft":
+        this.keys.arrowLeft = false;
+        break;
+      case "ArrowRight":
+        this.keys.arrowRight = false;
+        break;
+    }
   };
 }
