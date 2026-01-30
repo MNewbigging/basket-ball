@@ -3,6 +3,7 @@ import * as CANNON from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
 import { Paddle } from "./paddle";
 import { Ball } from "./ball";
+import { Basket } from "./basket";
 
 export interface GameKeys {
   arrowLeft: boolean;
@@ -15,7 +16,7 @@ export interface GameKeys {
 
 export class Game {
   private renderer: THREE.WebGLRenderer;
-  private camera = new THREE.PerspectiveCamera();
+  private camera = new THREE.PerspectiveCamera(90);
   private scene = new THREE.Scene();
   private clock = new THREE.Clock();
 
@@ -35,7 +36,10 @@ export class Game {
 
   private paddle: Paddle;
 
-  private ball: Ball;
+  private balls: Ball[] = [];
+  private ballMaterial: CANNON.Material;
+
+  private baskets: Basket[] = [];
 
   constructor() {
     // Setup
@@ -55,17 +59,28 @@ export class Game {
 
     const paddleMaterial = new CANNON.Material("paddle");
     // todo make multiple mats for different bounciness
-    const ballMaterial = new CANNON.Material("ball");
+    this.ballMaterial = new CANNON.Material("ball");
+    const basketMaterial = new CANNON.Material("basket");
 
     const paddleBallContact = new CANNON.ContactMaterial(
       paddleMaterial,
-      ballMaterial,
+      this.ballMaterial,
       {
         restitution: 0.8, // the bouncy factor
         friction: 0,
       },
     );
     this.physicsWorld.addContactMaterial(paddleBallContact);
+
+    const basketBallContact = new CANNON.ContactMaterial(
+      basketMaterial,
+      this.ballMaterial,
+      {
+        restitution: 0.2,
+        friction: 0.1,
+      },
+    );
+    this.physicsWorld.addContactMaterial(basketBallContact);
 
     this.physicsDebugger = CannonDebugger(this.scene, this.physicsWorld, {
       color: 0xff0000,
@@ -75,9 +90,10 @@ export class Game {
     this.paddle = new Paddle(this.keys, paddleMaterial);
     this.physicsWorld.addBody(this.paddle.body);
 
-    // Ball
-    this.ball = new Ball(ballMaterial);
-    this.physicsWorld.addBody(this.ball.body);
+    // Baskets
+    const basket = new Basket();
+    basket.body.position.set(10, 0, 0);
+    this.physicsWorld.addBody(basket.body);
   }
 
   start() {
@@ -91,6 +107,8 @@ export class Game {
 
     const dt = this.clock.getDelta();
 
+    this.manageBalls();
+
     this.paddle.update(dt);
 
     this.physicsWorld.step(1 / 60, dt, 3);
@@ -99,6 +117,22 @@ export class Game {
 
     this.renderer.render(this.scene, this.camera);
   };
+
+  private manageBalls() {
+    // Spawn 1 at a time for now
+    if (!this.balls.length) {
+      const ball = new Ball(this.ballMaterial);
+      ball.body.position.set(0, 10, 0);
+      this.physicsWorld.addBody(ball.body);
+      this.balls.push(ball);
+      console.log("spawned blal");
+    }
+
+    // Remove if offscreen
+    this.balls.forEach((ball, index) => {
+      // I need the 3js part for this
+    });
+  }
 
   private onCanvasResize = () => {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -151,4 +185,25 @@ export class Game {
         break;
     }
   };
+}
+
+// Test if offscreen logic...
+const sphere = new THREE.Sphere();
+
+function isOnScreenSphere(mesh: THREE.Mesh, camera: THREE.Camera) {
+  const geometry = mesh.geometry;
+  if (!geometry.boundingSphere) {
+    geometry.computeBoundingSphere();
+  }
+
+  sphere.copy(geometry.boundingSphere!).applyMatrix4(mesh.matrixWorld);
+
+  const frustum = new THREE.Frustum().setFromProjectionMatrix(
+    new THREE.Matrix4().multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse,
+    ),
+  );
+
+  return frustum.intersectsSphere(sphere);
 }

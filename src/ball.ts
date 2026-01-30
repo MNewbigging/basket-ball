@@ -7,7 +7,7 @@ export class Ball {
     this.body = new CANNON.Body({
       mass: 1,
       shape: new CANNON.Sphere(0.2),
-      position: new CANNON.Vec3(0, 5, 0),
+      position: new CANNON.Vec3(),
       material,
       linearDamping: 0,
       angularDamping: 0,
