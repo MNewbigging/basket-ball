@@ -89,11 +89,15 @@ export class Game {
     // Paddle
     this.paddle = new Paddle(this.keys, paddleMaterial);
     this.physicsWorld.addBody(this.paddle.body);
+    this.scene.add(this.paddle.mesh);
 
     // Baskets
     const basket = new Basket();
     basket.body.position.set(10, 0, 0);
     this.physicsWorld.addBody(basket.body);
+    this.scene.add(basket.mesh);
+    basket.updateMesh();
+    this.baskets.push(basket);
   }
 
   start() {
@@ -109,9 +113,9 @@ export class Game {
 
     this.manageBalls();
 
-    this.paddle.update(dt);
-
     this.physicsWorld.step(1 / 60, dt, 3);
+
+    this.paddle.update(dt);
 
     this.physicsDebugger.update();
 

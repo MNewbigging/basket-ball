@@ -4,6 +4,11 @@ import { GameKeys } from "./game";
 
 export class Paddle {
   body: CANNON.Body;
+  mesh: THREE.Mesh;
+
+  private width = 3;
+  private height = 0.4;
+  private depth = 1;
 
   private targetTilt = 0; // radians
   private readonly tiltSpeed = 5;
@@ -23,9 +28,17 @@ export class Paddle {
     this.body = new CANNON.Body({
       type: CANNON.Body.KINEMATIC,
       position: new CANNON.Vec3(),
-      shape: new CANNON.Box(new CANNON.Vec3(1.5, 0.2, 0.5)),
+      shape: new CANNON.Box(
+        new CANNON.Vec3(this.width / 2, this.height / 2, this.depth / 2),
+      ),
       material,
     });
+
+    // Create threejs mesh
+    this.mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(this.width, this.height, this.depth),
+      new THREE.MeshBasicMaterial({ color: "green" }),
+    );
   }
 
   update(dt: number) {
@@ -63,5 +76,9 @@ export class Paddle {
       posDiff.y * this.moveStiffness,
       0,
     );
+
+    // Update mesh
+    this.mesh.position.copy(this.body.position);
+    this.mesh.quaternion.copy(this.body.quaternion);
   }
 }
