@@ -92,12 +92,21 @@ export class Game {
     this.scene.add(this.paddle.mesh);
 
     // Baskets
-    const basket = new Basket();
-    basket.body.position.set(10, 0, 0);
-    this.physicsWorld.addBody(basket.body);
-    this.scene.add(basket.mesh);
-    basket.updateMesh();
-    this.baskets.push(basket);
+    const makeBasketCol = (xPos: number) => {
+      for (let row = 0; row < 3; row++) {
+        const basket = new Basket();
+        this.physicsWorld.addBody(basket.body);
+        this.scene.add(basket.mesh);
+        this.baskets.push(basket);
+
+        const yPos = -7 + row * 7;
+        basket.body.position.set(xPos, yPos, 0);
+        basket.updateMesh();
+      }
+    };
+
+    makeBasketCol(-10);
+    makeBasketCol(10);
   }
 
   start() {
@@ -117,8 +126,6 @@ export class Game {
 
     this.paddle.update(dt);
 
-    this.physicsDebugger.update();
-
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -126,14 +133,16 @@ export class Game {
     // Spawn 1 at a time for now
     if (!this.balls.length) {
       const ball = new Ball(this.ballMaterial);
-      ball.body.position.set(0, 10, 0);
       this.physicsWorld.addBody(ball.body);
+      this.scene.add(ball.mesh);
       this.balls.push(ball);
-      console.log("spawned blal");
+      ball.body.position.set(0, 10, 0);
     }
 
-    // Remove if offscreen
     this.balls.forEach((ball, index) => {
+      // Update
+      ball.updateMesh();
+
       // I need the 3js part for this
     });
   }
