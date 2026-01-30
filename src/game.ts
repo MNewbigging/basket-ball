@@ -38,6 +38,9 @@ export class Game {
 
   private balls: Ball[] = [];
   private ballMaterial: CANNON.Material;
+  private sphere = new THREE.Sphere();
+  private frustum = new THREE.Frustum();
+  private projScreenMatrix = new THREE.Matrix4();
 
   private baskets: Basket[] = [];
 
@@ -143,7 +146,29 @@ export class Game {
       // Update
       ball.updateMesh();
 
-      // I need the 3js part for this
+      // Remove if offscreen
+      const geometry = ball.mesh.geometry;
+      if (!geometry.boundingSphere) {
+        geometry.computeBoundingSphere();
+      }
+
+      this.sphere
+        .copy(geometry.boundingSphere!)
+        .applyMatrix4(ball.mesh.matrixWorld);
+
+      this.camera.updateMatrixWorld();
+      this.projScreenMatrix.multiplyMatrices(
+        this.camera.projectionMatrix,
+        this.camera.matrixWorldInverse,
+      );
+      this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
+
+      if (!this.frustum.intersectsSphere(this.sphere)) {
+        this.scene.remove(ball.mesh);
+        this.physicsWorld.removeBody(ball.body);
+        ball.dispose();
+        this.balls.splice(index, 1);
+      }
     });
   }
 

@@ -25,6 +25,11 @@ export class Ball {
     );
   }
 
+  dispose() {
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.MeshBasicMaterial).dispose();
+  }
+
   updateMesh() {
     this.mesh.position.copy(this.body.position);
     this.mesh.quaternion.copy(this.body.quaternion);
