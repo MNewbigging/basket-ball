@@ -23,6 +23,8 @@ export class Ball {
       new THREE.SphereGeometry(this.radius),
       new THREE.MeshBasicMaterial({ color: "pink" }),
     );
+
+    this.mesh.geometry.computeBoundingSphere();
   }
 
   dispose() {

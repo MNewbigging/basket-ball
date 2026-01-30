@@ -17,8 +17,12 @@ export class Paddle {
   private euler = new CANNON.Vec3();
 
   private targetPos = new CANNON.Vec3();
-  private readonly moveSpeed = 5;
+  private readonly moveSpeed = 6;
   private readonly moveStiffness = 10;
+  private readonly xMin = -5;
+  private readonly xMax = 5;
+  private readonly yMin = -7;
+  private readonly yMax = 10;
 
   constructor(
     private keys: GameKeys,
@@ -58,7 +62,18 @@ export class Paddle {
     const xDir = Number(d) - Number(a);
 
     this.targetPos.y += yDir * this.moveSpeed * dt;
+    this.targetPos.y = THREE.MathUtils.clamp(
+      this.targetPos.y,
+      this.yMin,
+      this.yMax,
+    );
+
     this.targetPos.x += xDir * this.moveSpeed * dt;
+    this.targetPos.x = THREE.MathUtils.clamp(
+      this.targetPos.x,
+      this.xMin,
+      this.xMax,
+    );
 
     // todo ensure doesn't go outwith movement bounds
 

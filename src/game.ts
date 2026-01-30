@@ -41,6 +41,8 @@ export class Game {
   private sphere = new THREE.Sphere();
   private frustum = new THREE.Frustum();
   private projScreenMatrix = new THREE.Matrix4();
+  private ballSpawnTimer = 0;
+  private ballSpawnHeight = 12;
 
   private baskets: Basket[] = [];
 
@@ -69,7 +71,7 @@ export class Game {
       paddleMaterial,
       this.ballMaterial,
       {
-        restitution: 0.8, // the bouncy factor
+        restitution: 0.4, // the bouncy factor
         friction: 0,
       },
     );
@@ -123,7 +125,7 @@ export class Game {
 
     const dt = this.clock.getDelta();
 
-    this.manageBalls();
+    this.manageBalls(dt);
 
     this.physicsWorld.step(1 / 60, dt, 3);
 
@@ -132,14 +134,17 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
   };
 
-  private manageBalls() {
-    // Spawn 1 at a time for now
-    if (!this.balls.length) {
+  private manageBalls(dt: number) {
+    this.ballSpawnTimer -= dt;
+
+    if (this.ballSpawnTimer <= 0) {
+      this.ballSpawnTimer = Math.random() * 2;
       const ball = new Ball(this.ballMaterial);
       this.physicsWorld.addBody(ball.body);
       this.scene.add(ball.mesh);
       this.balls.push(ball);
-      ball.body.position.set(0, 10, 0);
+      const xPos = -5 + Math.random() * 10;
+      ball.body.position.set(xPos, 12, 0);
     }
 
     this.balls.forEach((ball, index) => {
@@ -147,29 +152,29 @@ export class Game {
       ball.updateMesh();
 
       // Remove if offscreen
-      const geometry = ball.mesh.geometry;
-      if (!geometry.boundingSphere) {
-        geometry.computeBoundingSphere();
-      }
-
-      this.sphere
-        .copy(geometry.boundingSphere!)
-        .applyMatrix4(ball.mesh.matrixWorld);
-
-      this.camera.updateMatrixWorld();
-      this.projScreenMatrix.multiplyMatrices(
-        this.camera.projectionMatrix,
-        this.camera.matrixWorldInverse,
-      );
-      this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
-
-      if (!this.frustum.intersectsSphere(this.sphere)) {
+      const mesh = ball.mesh;
+      if (mesh.position.y < 10 && this.isOffscreen(ball.mesh)) {
         this.scene.remove(ball.mesh);
         this.physicsWorld.removeBody(ball.body);
         ball.dispose();
         this.balls.splice(index, 1);
       }
     });
+  }
+
+  private isOffscreen(mesh: THREE.Mesh) {
+    this.sphere
+      .copy(mesh.geometry.boundingSphere!)
+      .applyMatrix4(mesh.matrixWorld);
+
+    this.camera.updateMatrixWorld();
+    this.projScreenMatrix.multiplyMatrices(
+      this.camera.projectionMatrix,
+      this.camera.matrixWorldInverse,
+    );
+    this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
+
+    return !this.frustum.intersectsSphere(this.sphere);
   }
 
   private onCanvasResize = () => {
